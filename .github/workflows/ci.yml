@@ -97,8 +97,28 @@ jobs:
           severity: "CRITICAL,HIGH"
         continue-on-error: true
 
-      - name: Upload Trivy SARIF
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Trivy repo scan (HTML report)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "table"
+          output: "trivy-repo.txt"
+          severity: "CRITICAL,HIGH,MEDIUM"
+        continue-on-error: true
+
+      - name: Upload Trivy reports (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-repo-reports
+          path: |
+            trivy-repo.sarif
+            trivy-repo.txt
+        continue-on-error: true
+
+      - name: Upload Trivy SARIF (Security tab)
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-repo.sarif
@@ -127,7 +147,63 @@ jobs:
           scan-type: "fs"
           scan-ref: "."
           format: "table"
+          output: "trivy-deps-${{ matrix.project }}.txt"
           severity: "CRITICAL,HIGH"
+        continue-on-error: true
+
+      - name: Upload Trivy deps report (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-deps-${{ matrix.project }}
+          path: trivy-deps-${{ matrix.project }}.txt
+        continue-on-error: true
+
+  # ------------------------------ Trivy container (imagen Docker license-server)
+  trivy-container:
+    name: Trivy (container license-server)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build license-server image
+        run: docker build -t license-server:ci ./license-server
+
+      - name: Trivy image scan (vulnerabilities)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "license-server:ci"
+          format: "sarif"
+          output: "trivy-container.sarif"
+          severity: "CRITICAL,HIGH"
+        continue-on-error: true
+
+      - name: Trivy image scan (table report)
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${{ github.workspace }}":/output \
+            aquasec/trivy:latest image \
+            --format table --severity CRITICAL,HIGH,MEDIUM \
+            -o /output/trivy-container.txt \
+            license-server:ci || true
+        continue-on-error: true
+
+      - name: Upload Trivy container reports (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-container-license-server
+          path: |
+            trivy-container.sarif
+            trivy-container.txt
+        continue-on-error: true
+
+      - name: Upload Trivy container SARIF (Security tab)
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: trivy-container.sarif
         continue-on-error: true
 
   # ------------------------------ Supply chain security
@@ -177,6 +253,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create reports dir
+        run: mkdir -p reports
+
       - name: Run OWASP Dependency-Check
         run: |
           docker run --rm \
@@ -191,8 +270,16 @@ jobs:
             --failOnCVSS 9
         continue-on-error: true
 
-      - name: Upload OWASP Dependency-Check SARIF
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Upload OWASP Dependency-Check (artifact)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owasp-dependency-check-reports
+          path: reports/
+        continue-on-error: true
+
+      - name: Upload OWASP Dependency-Check SARIF (Security tab)
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: reports/dependency-check-report.sarif
