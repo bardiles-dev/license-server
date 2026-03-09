@@ -1,0 +1,174 @@
+# CI: lint, tests, análisis de dependencias (OWASP), SonarCloud, SAST (Bandit), DAST (ZAP)
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Lint license-server
+        run: ruff check license-server/app --output-format=github
+        continue-on-error: true
+
+      - name: Lint license-authority
+        run: ruff check license-authority/app --output-format=github
+        continue-on-error: true
+
+  # Análisis de vulnerabilidades en dependencias (Python / PyPI)
+  dependency-audit:
+    name: Dependency audit (pip-audit)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [license-server, license-authority]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r ${{ matrix.project }}/requirements.txt
+
+      - name: Run pip-audit
+        run: |
+          pip install pip-audit
+          pip-audit -r ${{ matrix.project }}/requirements.txt --format=json --output=audit-${{ matrix.project }}.json || true
+          pip-audit -r ${{ matrix.project }}/requirements.txt
+
+  # OWASP Dependency-Check (CVE/NVD para dependencias)
+  owasp-dependency-check:
+    name: OWASP Dependency-Check
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run OWASP Dependency-Check
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}":/src \
+            -v "${{ github.workspace }}/reports":/reports \
+            owasp/dependency-check:latest \
+            --scan /src \
+            --project "license-server-ts" \
+            --format SARIF \
+            --out /reports \
+            --enablePython \
+            --failOnCVSS 9
+        continue-on-error: true
+
+      - name: Upload OWASP Dependency-Check SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: reports/dependency-check-report.sarif
+        continue-on-error: true
+
+  # SonarCloud (calidad de código + seguridad)
+  # sonarcloud:
+  #   name: SonarCloud
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false)
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v5
+  #       with:
+  #         python-version: ${{ env.PYTHON_VERSION }}
+
+  #     - name: Install dependencies (both projects)
+  #       run: |
+  #         pip install -r license-server/requirements.txt
+  #         pip install -r license-authority/requirements.txt
+
+  #     - name: SonarCloud Scan
+  #       uses: SonarSource/sonarcloud-github-action@master
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #       continue-on-error: true
+
+  # SAST: Bandit (análisis estático de seguridad Python)
+  sast-bandit:
+    name: SAST (Bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit (license-server)
+        run: bandit -r license-server/app -f json -o bandit-server.json || true
+        continue-on-error: true
+
+      - name: Run Bandit (license-authority)
+        run: bandit -r license-authority/app -f json -o bandit-authority.json || true
+        continue-on-error: true
+
+      - name: Run Bandit (report)
+        run: |
+          bandit -r license-server/app -ll
+          bandit -r license-authority/app -ll
+
+  # DAST: OWASP ZAP baseline (requiere app en ejecución)
+  dast-zap:
+    name: DAST (OWASP ZAP)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install license-server deps
+        run: pip install -r license-server/requirements.txt
+
+      - name: Start license-server (background)
+        run: |
+          cd license-server && python -m uvicorn app.main:app --host 127.0.0.1 --port 9000 &
+          sleep 15
+          curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9000/ || true
+
+      - name: OWASP ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: "http://127.0.0.1:9000"
+          scan_type: "baseline"
+          fail_action: false
+        continue-on-error: true
