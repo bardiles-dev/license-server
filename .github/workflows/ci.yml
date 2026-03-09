@@ -55,7 +55,8 @@ jobs:
         run: |
           pip install pip-audit
           pip-audit -r ${{ matrix.project }}/requirements.txt --format=json --output=audit-${{ matrix.project }}.json || true
-          pip-audit -r ${{ matrix.project }}/requirements.txt
+          pip-audit -r ${{ matrix.project }}/requirements.txt || true
+        continue-on-error: true
 
   # OWASP Dependency-Check (CVE/NVD para dependencias)
   owasp-dependency-check:

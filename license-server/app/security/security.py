@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.exceptions import InvalidSignature
 
 from passlib.context import CryptContext
-from jose import jwt, JWTError
+import jwt
 from datetime import datetime, timedelta, timezone
 
 
@@ -43,7 +43,7 @@ def create_access_token(data: dict):
 def decode_token(token: str):
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
+    except jwt.PyJWTError:
         return None
 
 

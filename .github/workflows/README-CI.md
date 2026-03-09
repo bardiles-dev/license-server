@@ -27,6 +27,6 @@ Si no configuras `SONAR_TOKEN`, el job **SonarCloud** fallará; está con `conti
 
 ## Notas
 
-- **pip-audit**: si encuentra vulnerabilidades conocidas en `requirements.txt`, el job puede fallar. Revisa y actualiza dependencias.
+- **pip-audit**: lista vulnerabilidades conocidas (CVE) en dependencias. El job no falla si hay hallazgos (`continue-on-error`), pero conviene revisarlos. **CVE-2024-23342 (ecdsa)**: viene de `python-jose[cryptography]`; los mantenedores de `ecdsa` no ofrecen parche y recomiendan usar PyCA `cryptography`; el impacto es un timing attack en P-256. Valorar migrar a `PyJWT` o asumir el riesgo en entornos no críticos.
 - **OWASP Dependency-Check**: la primera ejecución descarga la base NVD (puede tardar varios minutos).
 - **ZAP**: el servidor se inicia en el job; si no arranca (p. ej. falta `public.pem`), el escaneo puede fallar (job con `continue-on-error`).
