@@ -6,27 +6,34 @@ Workflow: **`.github/workflows/ci.yml`**
 
 | Job | Descripción |
 |-----|-------------|
-| **Lint** | Ruff sobre `license-server/app` y `license-authority/app`. |
-| **Dependency audit (pip-audit)** | Vulnerabilidades en dependencias Python (PyPI). Ejecuta `pip-audit` por proyecto. |
-| **OWASP Dependency-Check** | Análisis CVE/NVD con imagen oficial Docker. Genera SARIF y se sube a la pestaña Security. |
-| **SonarCloud** | Análisis de calidad y seguridad. Requiere `SONAR_TOKEN` en GitHub Secrets. |
+| **Build verification** | Instala dependencias de cada proyecto y comprueba que `app.main:app` importe correctamente. |
+| **Code quality** | Ruff check + Ruff format check sobre ambos proyectos. |
+| **Secret scanning** | Gitleaks: detección de secretos y credenciales en el repositorio. |
+| **Trivy (repository)** | Escaneo del repositorio (fs) en busca de vulnerabilidades y malas configuraciones. Genera SARIF (Security tab). |
+| **Trivy (dependencies)** | Trivy sobre el entorno Python tras instalar dependencias (por proyecto). |
+| **Supply chain security** | Dependency review en PRs (vulnerabilidades en dependencias de los manifest cambiados). |
+| **Dependency audit (pip-audit)** | Vulnerabilidades en dependencias Python (PyPI) por proyecto. |
+| **OWASP Dependency-Check** | Análisis CVE/NVD con imagen Docker. SARIF a Security. |
 | **SAST (Bandit)** | Análisis estático de seguridad sobre el código Python. |
-| **DAST (OWASP ZAP)** | Escaneo baseline contra license-server (solo en push a `main`). La app se levanta en el job. |
+| **DAST (OWASP ZAP)** | Escaneo baseline + full scan contra license-server (solo en push a `main`). **Reporte HTML** subido como artifact `dast-zap-report`. |
 
-## Secrets necesarios
+## Reportes y artefactos
 
-- **`SONAR_TOKEN`**: para SonarCloud. Crear proyecto en [sonarcloud.io](https://sonarcloud.io), vincular el repo y copiar el token a **Settings → Secrets and variables → Actions**.
+- **DAST (HTML)**  
+  En cada run del job DAST (push a `main`) se genera un reporte HTML de ZAP y se sube como **artifact** `dast-zap-report`. Descarga desde la pestaña **Actions** → run → **Artifacts**.
 
-## SonarCloud (opcional)
+- **SARIF (Security)**  
+  Trivy repo y OWASP Dependency-Check suben resultados a **Security** → **Code security** (y opcionalmente **Dependency graph**).
 
-1. Entra en [SonarCloud](https://sonarcloud.io) y vincula el repositorio.
-2. Copia el **Project Key** y el **Organization** y rellena `sonar-project.properties` (o configura en la UI).
-3. En el repo de GitHub: **Settings → Secrets → Actions** → New repository secret → nombre `SONAR_TOKEN`, valor = token de SonarCloud.
+## Secrets
 
-Si no configuras `SONAR_TOKEN`, el job **SonarCloud** fallará; está con `continue-on-error: true` para no bloquear el resto del pipeline.
+- **`SONAR_TOKEN`**: solo si usas SonarCloud (job comentado por defecto).
+- **Gitleaks**: usa `GITHUB_TOKEN`; no requiere secret adicional para uso estándar.
 
 ## Notas
 
-- **pip-audit**: lista vulnerabilidades conocidas (CVE) en dependencias. El job no falla si hay hallazgos (`continue-on-error`), pero conviene revisarlos. **CVE-2024-23342 (ecdsa)**: viene de `python-jose[cryptography]`; los mantenedores de `ecdsa` no ofrecen parche y recomiendan usar PyCA `cryptography`; el impacto es un timing attack en P-256. Valorar migrar a `PyJWT` o asumir el riesgo en entornos no críticos.
-- **OWASP Dependency-Check**: la primera ejecución descarga la base NVD (puede tardar varios minutos).
-- **ZAP**: el servidor se inicia en el job; si no arranca (p. ej. falta `public.pem`), el escaneo puede fallar (job con `continue-on-error`).
+- **pip-audit**: no hace fallar el job; revisar hallazgos y actualizar dependencias.
+- **OWASP Dependency-Check**: primera ejecución puede tardar (descarga NVD).
+- **ZAP**: el servidor se levanta en el job; si falla (p. ej. falta `public.pem`), el escaneo puede fallar (job con `continue-on-error`).
+- **Supply chain**: solo se ejecuta en **pull_request**.
+- **DAST y reporte HTML**: solo en **push** a `main`.

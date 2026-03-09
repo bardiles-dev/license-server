@@ -1,4 +1,4 @@
-# CI: lint, tests, análisis de dependencias (OWASP), SonarCloud, SAST (Bandit), DAST (ZAP)
+# CI: build, lint, code quality, Trivy, secret scanning, dependency/DAST reports, supply chain
 name: CI
 
 on:
@@ -11,8 +11,33 @@ env:
   PYTHON_VERSION: "3.12"
 
 jobs:
-  lint:
-    name: Lint
+  # ------------------------------ Build verification
+  build-verify:
+    name: Build verification
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [license-server, license-authority]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r ${{ matrix.project }}/requirements.txt
+
+      - name: Verify import
+        run: |
+          cd ${{ matrix.project }}
+          python -c "from app.main import app; print('OK')"
+        continue-on-error: true
+
+  # ------------------------------ Code quality (lint + format)
+  code-quality:
+    name: Code quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,12 +50,96 @@ jobs:
       - name: Install Ruff
         run: pip install ruff
 
-      - name: Lint license-server
+      - name: Ruff check (license-server)
         run: ruff check license-server/app --output-format=github
         continue-on-error: true
 
-      - name: Lint license-authority
+      - name: Ruff check (license-authority)
         run: ruff check license-authority/app --output-format=github
+        continue-on-error: true
+
+      - name: Ruff format check
+        run: ruff format --check license-server/app license-authority/app
+        continue-on-error: true
+
+  # ------------------------------ Secret scanning
+  # secret-scan:
+  #   name: Secret scanning
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+
+  #     - name: Gitleaks scan
+  #       uses: gitleaks/gitleaks-action@v2
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       continue-on-error: true
+
+  # ------------------------------ Trivy (vulnerabilities + misconfig)
+  trivy-repo:
+    name: Trivy (repository)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy repo scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-repo.sarif"
+          severity: "CRITICAL,HIGH"
+        continue-on-error: true
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-repo.sarif
+        continue-on-error: true
+
+  trivy-deps:
+    name: Trivy (dependencies)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [license-server, license-authority]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install deps
+        run: pip install -r ${{ matrix.project }}/requirements.txt
+
+      - name: Trivy fs (installed packages)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "table"
+          severity: "CRITICAL,HIGH"
+        continue-on-error: true
+
+  # ------------------------------ Supply chain security
+  supply-chain:
+    name: Supply chain security
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
         continue-on-error: true
 
   # Análisis de vulnerabilidades en dependencias (Python / PyPI)
@@ -144,7 +253,7 @@ jobs:
           bandit -r license-server/app -ll
           bandit -r license-authority/app -ll
 
-  # DAST: OWASP ZAP baseline (requiere app en ejecución)
+  # DAST: OWASP ZAP baseline + reporte HTML
   dast-zap:
     name: DAST (OWASP ZAP)
     runs-on: ubuntu-latest
@@ -172,4 +281,25 @@ jobs:
           target: "http://127.0.0.1:9000"
           scan_type: "baseline"
           fail_action: false
+        continue-on-error: true
+
+      - name: Create reports dir
+        run: mkdir -p reports
+
+      - name: ZAP full scan (HTML report)
+        run: |
+          docker run --rm --network host \
+            -v "${{ github.workspace }}/reports":/zap/wrk:rw \
+            ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
+            -t http://127.0.0.1:9000 \
+            -r /zap/wrk/zap-report.html \
+            -I
+        continue-on-error: true
+
+      - name: Upload DAST HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dast-zap-report
+          path: reports/zap-report.html
         continue-on-error: true
