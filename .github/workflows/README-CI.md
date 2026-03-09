@@ -9,21 +9,22 @@ Workflow: **`.github/workflows/ci.yml`**
 | **Build verification** | Instala dependencias de cada proyecto y comprueba que `app.main:app` importe correctamente. |
 | **Code quality** | Ruff check + Ruff format check sobre ambos proyectos. |
 | **Secret scanning** | Gitleaks: detección de secretos y credenciales en el repositorio. |
-| **Trivy (repository)** | Escaneo del repositorio (fs) en busca de vulnerabilidades y malas configuraciones. Genera SARIF (Security tab). |
-| **Trivy (dependencies)** | Trivy sobre el entorno Python tras instalar dependencias (por proyecto). |
+| **Trivy (repository)** | Escaneo del repositorio (fs). SARIF a Security tab + artifact `trivy-repo-reports` (SARIF + tabla). |
+| **Trivy (dependencies)** | Trivy sobre el entorno Python tras instalar dependencias (por proyecto). Artifact `trivy-deps-<proyecto>`. |
+| **Trivy (container)** | Construye la imagen Docker de `license-server` y la escanea con Trivy (vulnerabilidades + config). Artifact `trivy-container-license-server` + SARIF a Security. |
 | **Supply chain security** | Dependency review en PRs (vulnerabilidades en dependencias de los manifest cambiados). |
 | **Dependency audit (pip-audit)** | Vulnerabilidades en dependencias Python (PyPI) por proyecto. |
-| **OWASP Dependency-Check** | Análisis CVE/NVD con imagen Docker. SARIF a Security. |
+| **OWASP Dependency-Check** | Análisis CVE/NVD con imagen Docker. SARIF a Security + artifact `owasp-dependency-check-reports`. |
 | **SAST (Bandit)** | Análisis estático de seguridad sobre el código Python. |
 | **DAST (OWASP ZAP)** | Escaneo baseline + full scan contra license-server (solo en push a `main`). **Reporte HTML** subido como artifact `dast-zap-report`. |
 
 ## Reportes y artefactos
 
-- **DAST (HTML)**  
-  En cada run del job DAST (push a `main`) se genera un reporte HTML de ZAP y se sube como **artifact** `dast-zap-report`. Descarga desde la pestaña **Actions** → run → **Artifacts**.
+- **Artifacts (descargables)**  
+  En **Actions** → run → **Artifacts** encontrarás: `trivy-repo-reports`, `trivy-deps-<proyecto>`, `trivy-container-license-server`, `owasp-dependency-check-reports`, `dast-zap-report` (solo en push a `main`).
 
-- **SARIF (Security)**  
-  Trivy repo y OWASP Dependency-Check suben resultados a **Security** → **Code security** (y opcionalmente **Dependency graph**).
+- **SARIF (Security tab)**  
+  CodeQL Action **v4** sube SARIF de Trivy (repo + contenedor) y OWASP Dependency-Check a **Security** → **Code security**.
 
 ## Secrets
 
