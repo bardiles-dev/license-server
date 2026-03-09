@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar sesión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e40af;
+            --primary-dark: #1e3a8a;
+            --primary-light: #3b82f6;
+            --bg-page: #f1f5f9;
+            --bg-card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #dc2626;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Inter", system-ui, sans-serif;
+            min-height: 100vh;
+            background: var(--bg-page);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .login-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.08), 0 2px 4px -2px rgba(30, 41, 59, 0.06);
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-title {
+            color: var(--text);
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .login-subtitle {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-control {
+            border-radius: 8px;
+            border-color: var(--border);
+        }
+        .form-control:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .btn-login {
+            background: var(--primary);
+            border: none;
+            color: #fff;
+            font-weight: 500;
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            transition: background 0.2s ease, transform 0.15s ease;
+        }
+        .btn-login:hover {
+            background: var(--primary-dark);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        .alert-login {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            border-radius: 8px;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-card {
+            animation: fadeInUp 0.45s ease forwards;
+        }
+        .animate-field {
+            opacity: 0;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .animate-field-1 { animation-delay: 0.1s; }
+        .animate-field-2 { animation-delay: 0.18s; }
+        .animate-field-3 { animation-delay: 0.26s; }
+        .animate-field-4 { animation-delay: 0.34s; }
+    </style>
+</head>
+<body>
+    <div class="login-card animate-card">
+        <h1 class="login-title">Iniciar sesión</h1>
+        <p class="login-subtitle">License Server</p>
+
+        {% if error %}
+        <div class="alert alert-login mb-3 animate-field" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="/login">
+            <div class="mb-3 animate-field animate-field-1">
+                <label for="username" class="form-label small fw-medium text-secondary">Usuario</label>
+                <input type="text" class="form-control" id="username" name="username" placeholder="Usuario" autocomplete="username" required>
+            </div>
+            <div class="mb-3 animate-field animate-field-2">
+                <label for="password" class="form-label small fw-medium text-secondary">Contraseña</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" autocomplete="current-password" required>
+            </div>
+            <div class="animate-field animate-field-3">
+                <button type="submit" class="btn btn-login w-100">Entrar</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

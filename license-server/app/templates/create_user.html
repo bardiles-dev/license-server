@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo usuario{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <header class="mb-4 animate-in">
+            <h1 class="h4 fw-semibold text-dark mb-1">Nuevo usuario</h1>
+            <p class="text-muted small mb-0">Crear una nueva cuenta con rol asignado</p>
+        </header>
+
+        {% if error %}
+        <div class="alert alert-theme-danger animate-alert mb-4" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <div class="card card-theme p-3 p-md-4 animate-in animate-in-delay-1">
+            <form method="post" action="/users/create" class="needs-validation" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label fw-medium">Usuario</label>
+                    <input type="text" class="form-control" id="username" name="username" required minlength="2" maxlength="64" autocomplete="username" placeholder="Nombre de usuario">
+                    <div class="invalid-feedback">Introduce un nombre de usuario (mín. 2 caracteres).</div>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-medium">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required maxlength="255" autocomplete="email" placeholder="correo@ejemplo.com">
+                    <div class="invalid-feedback">Introduce un email válido.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label fw-medium">Contraseña</label>
+                    <input type="password" class="form-control" id="password" name="password" required minlength="8" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+                    <div class="invalid-feedback">Mínimo 6 caracteres.</div>
+                </div>
+                <div class="mb-4">
+                    <label for="role_id" class="form-label fw-medium">Rol</label>
+                    <select class="form-select" id="role_id" name="role_id" required>
+                        <option value="">Selecciona un rol</option>
+                        {% for r in roles %}
+                        <option value="{{ r.id }}">{{ r.name }}{% if r.description %} — {{ r.description }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="invalid-feedback">Selecciona un rol.</div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" class="btn btn-primary-theme btn-primary">Crear usuario</button>
+                    <a href="/users/config" class="btn btn-outline-theme btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+    var forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Editar usuario{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <header class="mb-4 animate-in">
+            <h1 class="h4 fw-semibold text-dark mb-1">Editar usuario</h1>
+            <p class="text-muted small mb-0">{{ edit_user.username }}</p>
+        </header>
+
+        {% if error %}
+        <div class="alert alert-theme-danger animate-alert mb-4" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <div class="card card-theme p-3 p-md-4 animate-in animate-in-delay-1">
+            <form method="post" action="/users/{{ edit_user.id }}/edit" class="needs-validation" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label fw-medium">Usuario</label>
+                    <input type="text" class="form-control" id="username" name="username" value="{{ edit_user.username }}" required minlength="2" maxlength="64" autocomplete="username">
+                    <div class="invalid-feedback">Introduce un nombre de usuario (mín. 2 caracteres).</div>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-medium">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{ edit_user.email }}" required maxlength="255" autocomplete="email">
+                    <div class="invalid-feedback">Introduce un email válido.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label fw-medium">Nueva contraseña</label>
+                    <input type="password" class="form-control" id="password" name="password" minlength="6" autocomplete="new-password" placeholder="Dejar en blanco para no cambiar">
+                </div>
+                <div class="mb-3">
+                    <label for="role_id" class="form-label fw-medium">Rol</label>
+                    <select class="form-select" id="role_id" name="role_id" required>
+                        {% for r in roles %}
+                        <option value="{{ r.id }}" {% if edit_user.role and edit_user.role.id == r.id %}selected{% endif %}>{{ r.name }}{% if r.description %} — {{ r.description }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="on" {% if edit_user.is_active %}checked{% endif %}>
+                        <label class="form-check-label fw-medium" for="is_active">Usuario activo</label>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="submit" class="btn btn-primary-theme btn-primary">Guardar</button>
+                    <a href="/users/config" class="btn btn-outline-theme btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+    var forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+</script>
+{% endblock %}

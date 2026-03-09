@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Generar licencias — License Authority{% endblock %}
+
+{% block content %}
+<h1 class="h4 mb-4">Generar y gestionar licencias</h1>
+
+{# ---------- Formulario crear licencia ---------- #}
+<section class="card p-4 mb-4">
+    <h2 class="h6 text-muted mb-3">Nueva licencia</h2>
+    <form id="formCreate">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Empresa</label>
+                <input type="text" class="form-control" name="company" required placeholder="MiEmpresa">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tipo</label>
+                <select class="form-select" name="license_type" id="licenseType" required>
+                    <option value="floating">Floating</option>
+                    <option value="machine">Machine</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Días de vigencia</label>
+                <input type="number" class="form-control" name="duration_days" value="365" min="1" required>
+            </div>
+            <div class="col-md-4" id="wrapMaxActivations">
+                <label class="form-label">Máx. activaciones</label>
+                <input type="number" class="form-control" name="max_activations" value="5" min="1" id="maxActivations">
+            </div>
+            <div class="col-md-8 d-none" id="wrapMachineLock">
+                <label class="form-label">Machine lock (fingerprint)</label>
+                <input type="text" class="form-control" name="machine_lock" id="machineLock" placeholder="hash o fingerprint de la máquina">
+            </div>
+            <div class="col-12">
+                <label class="form-label">Features (opcional)</label>
+                <div id="featuresList">
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" placeholder="id (ej. ia-agent)" name="f_id_0">
+                        <input type="text" class="form-control" placeholder="version" name="f_version_0">
+                        <input type="text" class="form-control" placeholder="funcionality" name="f_funcionality_0">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="addFeature">+ Añadir feature</button>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary" id="btnCreate">Crear licencia</button>
+            </div>
+        </div>
+    </form>
+</section>
+
+{# ---------- Resultado (modal) ---------- #}
+<div class="modal fade" id="resultModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Licencia creada</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Copia el <strong>string de instalación</strong> y pégalo en el license-server (dashboard → Instalar licencia).</p>
+                <div class="mb-3">
+                    <label class="form-label small">License install string</label>
+                    <div class="input-group">
+                        <textarea class="form-control font-monospace small" id="resultInstallString" rows="3" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-btn" id="copyInstallString" title="Copiar">📋</button>
+                    </div>
+                </div>
+                <details class="small">
+                    <summary class="text-muted">Ver payload y firma</summary>
+                    <pre class="bg-light text-dark p-3 rounded mt-2 small overflow-auto" id="resultPayload" style="max-height:200px"></pre>
+                </details>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ---------- Modal renovar ---------- #}
+<div class="modal fade" id="renewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Renovar licencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="renewLicenseId">
+                <label class="form-label">Días a añadir</label>
+                <input type="number" class="form-control" id="renewExtraDays" value="365" min="1">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnRenewConfirm">Renovar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ---------- Lista de licencias ---------- #}
+<section class="card overflow-hidden">
+    <div class="card-header bg-white border-bottom">
+        <h2 class="h6 mb-0">Licencias emitidas</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Empresa</th>
+                    <th>Tipo</th>
+                    <th>Expira</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lic in licenses %}
+                <tr>
+                    <td>{{ lic.company }}</td>
+                    <td><span class="badge bg-secondary">{{ lic.license_type }}</span></td>
+                    <td>{{ lic.expires_at.strftime('%Y-%m-%d') if lic.expires_at else '-' }}</td>
+                    <td><span class="badge {% if lic.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">{{ lic.status }}</span></td>
+                    <td class="text-end">
+                        {% if lic.status == 'active' %}
+                        <button type="button" class="btn btn-sm btn-outline-primary me-1 renew-btn" data-license-id="{{ lic.license_id }}">Renovar</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger revoke-btn" data-license-id="{{ lic.license_id }}">Revocar</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-muted py-4">No hay licencias. Crea una arriba.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/app.js"></script>
+{% endblock %}

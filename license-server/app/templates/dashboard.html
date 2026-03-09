@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+{% if forbidden %}
+<div class="alert alert-theme-warning alert-dismissible fade show animate-alert d-flex align-items-center" role="alert">
+    <span>No tienes permisos para acceder a esa página.</span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+{% endif %}
+{% if installed %}
+<div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+    <span>Licencia instalada correctamente.</span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+{% endif %}
+{% if install_error == 'csrf' %}
+<div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+    <span>Error de validación (CSRF). Recarga la página e intenta de nuevo.</span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+{% elif install_error == 'empty' %}
+<div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+    <span>La clave de licencia no puede estar vacía.</span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+{% elif install_error == 'decode' %}
+<div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+    <span>Formato de clave inválido.</span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+{% elif install_error == 'signature' %}
+<div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+    <span>Firma de licencia inválida.</span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+{% endif %}
+
+<header class="mb-4 animate-in">
+    <h1 class="h4 fw-semibold text-dark mb-1">Dashboard</h1>
+    <p class="text-muted small mb-0">Resumen de licencias y sesiones activas</p>
+</header>
+
+{% if user and user.role and user.role.name == "admin" %}
+<section class="card card-theme p-3 p-md-4 mb-4 animate-in animate-in-delay-1">
+    <h2 class="h6 fw-semibold text-dark mb-3">Instalar licencia</h2>
+    <form method="post" action="/api/license/install-from-string" class="row g-2 align-items-end">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="col-12 col-md">
+            <label for="license_key_install" class="form-label small text-muted">Clave de licencia</label>
+            <input type="text" class="form-control" id="license_key_install" name="license_key_install" placeholder="Pegar clave...">
+        </div>
+        <div class="col-12 col-md-auto">
+            <button type="submit" class="btn btn-primary-theme btn-primary w-100 w-md-auto">Instalar</button>
+        </div>
+    </form>
+</section>
+{% endif %}
+
+<section class="card card-theme overflow-hidden mb-4 animate-in animate-in-delay-2">
+    <div class="card-header bg-transparent border-bottom border-light px-3 px-md-4 py-3">
+        <h2 class="h6 fw-semibold text-dark mb-0">Licencias instaladas</h2>
+    </div>
+    <div class="card-body p-0">
+        {% if licenses_with_features %}
+        <div class="list-group list-group-flush">
+            {% for lic, features_list in licenses_with_features %}
+            <div class="list-group-item list-group-item-action d-flex flex-wrap align-items-center justify-content-between gap-2 py-3 px-3 px-md-4">
+                <div class="flex-grow-1">
+                    <span class="fw-medium text-dark">{{ lic.company }}</span>
+                    <span class="badge bg-secondary-theme badge-secondary-theme ms-2">{{ lic.license_type }}</span>
+                    <span class="d-block small text-muted mt-1">Expira: {{ lic.expires_at }} &middot; {{ lic.status }}</span>
+                    {% if lic.license_type == 'machine' and lic.machine_lock %}
+                    <span class="d-block small mt-1"><strong>Machine lock:</strong> <code class="small">{{ lic.machine_lock }}</code></span>
+                    {% endif %}
+                    {% if features_list %}
+                    <div class="d-block small mt-1">
+                        <strong>Features:</strong>
+                        {% for f in features_list %}
+                        <span class="d-inline-block me-2 mt-1">
+                            <span class="badge bg-light text-dark border">{{ f.tool }}</span>
+                            {% for key, val in f.attrs.items() %}
+                            <span class="text-muted">{{ key }}: {{ val }}</span>{% if not loop.last %} · {% endif %}
+                            {% endfor %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% if user and user.role and user.role.name == "admin" %}
+                <form method="post" action="/admin/delete-license/{{ lic.license_key }}" class="d-inline" onsubmit="return confirm('¿Eliminar esta licencia?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="card-footer bg-transparent border-top border-light px-3 px-md-4 py-2 small text-muted">
+            Total: {{ licenses_with_features|length }} licencia(s)
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4 mb-0">No hay licencias instaladas.</p>
+        {% endif %}
+    </div>
+</section>
+
+<section class="card card-theme overflow-hidden animate-in animate-in-delay-3">
+    <div class="card-header bg-transparent border-bottom border-light px-3 px-md-4 py-3">
+        <h2 class="h6 fw-semibold text-dark mb-0">Sesiones activas</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-theme table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Máquina</th>
+                    <th>Clave de licencia</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sessions %}
+                <tr>
+                    <td><code class="small">{{ s.machine_id }}</code></td>
+                    <td><code class="small">{{ s.license_key }}</code></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="text-center text-muted py-4">No hay sesiones activas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

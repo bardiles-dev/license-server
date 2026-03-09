@@ -1,0 +1,33 @@
+# License Server - Compose estable y seguro
+# Uso: copiar .env.example a .env, definir SECRET_KEY y rutas; luego: docker compose up -d
+
+services:
+  license-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: license-server
+    restart: unless-stopped
+    ports:
+      - "9900:9000"
+    environment:
+      - DATABASE_URL=sqlite:////app/data/license_server.db
+      - PUBLIC_PEM_PATH=/app/config/public.pem
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+    volumes:
+      - .license-server-data-dockercompose:/app/data
+      - ./public.pem:/app/config/public.pem:ro
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/', timeout=5)\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64M
+
+volumes:
+  license-server-data:

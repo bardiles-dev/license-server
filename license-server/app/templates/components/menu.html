@@ -1,0 +1,29 @@
+<nav class="navbar navbar-expand-lg navbar-dark navbar-theme">
+    <div class="container">
+        <a class="navbar-brand fw-semibold" href="/">License Server</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Menú">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">Dashboard</a>
+                </li>
+                {% if user and user.role and user.role.name == "admin" %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin-only">Admin</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/users/config">Usuarios</a>
+                </li>
+                {% endif %}
+            </ul>
+            <div class="d-flex align-items-center gap-2">
+                {% if user %}
+                <span class="navbar-text text-white opacity-90 small">{{ user.username }}</span>
+                <a href="/logout" class="btn btn-outline-light btn-sm">Cerrar sesión</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>

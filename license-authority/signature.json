@@ -1,0 +1,157 @@
+{
+  "payload": {
+    "license_id": "8e199a75-e7e9-40bc-82bc-1a2026b2a1c2",
+    "issuer": "Technology Solutions",
+    "signature_algorithm": "RSA-SHA256",
+    "version": 1,
+    "company": "BardilesSa",
+    "type": "floating",
+    "max_activations": 5,
+    "machine_lock": "",
+    "features": {
+      "additionalProp1": {
+        "Version": "2026.1"
+      }
+    },
+    "issued_at": "2026-03-03T18:20:15Z",
+    "expires_at": "2027-03-03T18:20:15Z",
+    "status": "active"
+  },
+  "signature": "RFssC0BWmxWvSsKe46TUClfc3+pPwg9htiCffR+OVZJ5Ujj+pzxknL/j+gI6n1UNr1ND+6vRv/cH9kcaVP9d2qgF7aDF6mQijxDJRC5ccEcg/+81O2unPp3GbAAz3vTVYNgnRjYNUMC2E3wLRWeAu1C9H4VIRr6/qSBdnb2rxdhb3V7n4WFCgi9gOSPbzMqz9H66XcuRSoHWs7YAivDpTxRwEBOOK5Uyc2tKt5AxXG0NAO90GXrT/h3ZuSIApohgbKC0l5PKEWdJnuYC2OF4Si6xHSsfgZ0ksqIBzyNnxcQrIkd+ArKMpRr9NZWYWq4wbu0ZUNxNCBZiUK703hZElA=="
+}
+
+
+// PAYLOAD CREATE-LICENSE-FEATURE:
+
+{
+  "company": "BardilesSa",
+  "license_type": "floating",
+  "max_activations": 5,
+  "machine_lock": "",
+  "duration_days": 365,
+  "features": {
+    "additionalProp1": {"Version":"2026.1", "tool":"ia-agent", "funcionality":"HU,EXEC,QAAGENT"}
+  }
+}
+
+
+{
+  "payload": {
+    "license_id": "40075513-12fa-4136-906f-246477e0c700",
+    "issuer": "Technology Solutions",
+    "signature_algorithm": "RSA-SHA256",
+    "version": 1,
+    "company": "BardilesSa",
+    "type": "floating",
+    "max_activations": 5,
+    "machine_lock": "",
+    "features": {
+      "additionalProp1": {
+        "Version": "2026.1",
+        "tool": "ia-agent",
+        "funcionality": "HU,EXEC,QAAGENT"
+      }
+    },
+    "issued_at": "2026-03-03T18:49:53Z",
+    "expires_at": "2027-03-03T18:49:53Z",
+    "status": "active"
+  },
+  "signature": "g44z2zUtJAt+SAi+u9WMY8vIQFy9Q01HbmjY5go+rAfhQyQhmHmwvgY1ErR5dHYwhSIDjRJhvlMD2m4oQ9s87wNUHRKO4fP7HpGRBaLRADlI0FvyPeonJejj2kmJoo46TyBUb2CDjf/H6n61uh9MHG+UTQNoIOj9+jU5Zf8Dzy9SAIbic2YoO5oe1xLu0PFuTZpm//20ZLdSo8F5i/9XO9iJbksLPu8IPpnjq260/MfqSp5fH9ru/HCd83sC/99EbhYHNyEHAhXEEyKYAZ22ukYxXdTZZSlkOehOMwRG9RHZ2lbBj76srONpllHk7pnt7JdmIjpJ5JmNHe+KMvtGAg==",
+  "license_install_string": "BardilesSa-1772563793_40075513-12fa-4136-906f-246477e0c700_floating_1804099793_5_g44z2zUtJAt+SAi+u9WMY8vIQFy9Q01HbmjY5go+rAfhQyQhmHmwvgY1ErR5dHYwhSIDjRJhvlMD2m4oQ9s87wNUHRKO4fP7HpGRBaLRADlI0FvyPeonJejj2kmJoo46TyBUb2CDjf/H6n61uh9MHG+UTQNoIOj9+jU5Zf8Dzy9SAIbic2YoO5oe1xLu0PFuTZpm//20ZLdSo8F5i/9XO9iJbksLPu8IPpnjq260/MfqSp5fH9ru/HCd83sC/99EbhYHNyEHAhXEEyKYAZ22ukYxXdTZZSlkOehOMwRG9RHZ2lbBj76srONpllHk7pnt7JdmIjpJ5JmNHe+KMvtGAg"
+}
+
+
+// compare payload
+{'license_blob': {'payload': {'company': 'BardilesSa', 'expires_at': '2027-03-03T18:49:53Z', 'features': {'additionalProp1': {'Version': '2026.1', 'tool': 'ia-agent', 'funcionality': 'HU,EXEC,QAAGENT'}}, 'issued_at': '2026-03-03T18:49:53Z', 'issuer': 'Technology Solutions', 'license_id': '40075513-12fa-4136-906f-246477e0c700', 'machine_lock': None, 'max_activations': 5, 'signature_algorithm': 'RSA-SHA256', 'status': 'active', 'type': 'floating', 'version': 1}, 'signature': 'g44z2zUtJAt+SAi+u9WMY8vIQFy9Q01HbmjY5go+rAfhQyQhmHmwvgY1ErR5dHYwhSIDjRJhvlMD2m4oQ9s87wNUHRKO4fP7HpGRBaLRADlI0FvyPeonJejj2kmJoo46TyBUb2CDjf/H6n61uh9MHG+UTQNoIOj9+jU5Zf8Dzy9SAIbic2YoO5oe1xLu0PFuTZpm//20ZLdSo8F5i/9XO9iJbksLPu8IPpnjq260/MfqSp5fH9ru/HCd83sC/99EbhYHNyEHAhXEEyKYAZ22ukYxXdTZZSlkOehOMwRG9RHZ2lbBj76srONpllHk7pnt7JdmIjpJ5JmNHe+KMvtGAg=='}}
+
+
+
+
+// other license
+
+
+
+
+
+{
+  "license_blob":{
+  "payload": {
+    "license_id": "40075513-12fa-4136-906f-246477e0c700",
+    "issuer": "Technology Solutions",
+    "signature_algorithm": "RSA-SHA256",
+    "version": 1,
+    "company": "BardilesSa",
+    "type": "floating",
+    "max_activations": 5,
+    "machine_lock": "",
+    "features": {
+      "additionalProp1": {
+        "Version": "2026.1",
+        "tool": "ia-agent",
+        "funcionality": "HU,EXEC,QAAGENT"
+      }
+    },
+    "issued_at": "2026-03-03T18:49:53Z",
+    "expires_at": "2027-03-03T18:49:53Z",
+    "status": "active"
+  },
+  "signature": "g44z2zUtJAt+SAi+u9WMY8vIQFy9Q01HbmjY5go+rAfhQyQhmHmwvgY1ErR5dHYwhSIDjRJhvlMD2m4oQ9s87wNUHRKO4fP7HpGRBaLRADlI0FvyPeonJejj2kmJoo46TyBUb2CDjf/H6n61uh9MHG+UTQNoIOj9+jU5Zf8Dzy9SAIbic2YoO5oe1xLu0PFuTZpm//20ZLdSo8F5i/9XO9iJbksLPu8IPpnjq260/MfqSp5fH9ru/HCd83sC/99EbhYHNyEHAhXEEyKYAZ22ukYxXdTZZSlkOehOMwRG9RHZ2lbBj76srONpllHk7pnt7JdmIjpJ5JmNHe+KMvtGAg==",
+  "license_install_string": "BardilesSa-1772563793_40075513-12fa-4136-906f-246477e0c700_floating_1804099793_5_g44z2zUtJAt+SAi+u9WMY8vIQFy9Q01HbmjY5go+rAfhQyQhmHmwvgY1ErR5dHYwhSIDjRJhvlMD2m4oQ9s87wNUHRKO4fP7HpGRBaLRADlI0FvyPeonJejj2kmJoo46TyBUb2CDjf/H6n61uh9MHG+UTQNoIOj9+jU5Zf8Dzy9SAIbic2YoO5oe1xLu0PFuTZpm//20ZLdSo8F5i/9XO9iJbksLPu8IPpnjq260/MfqSp5fH9ru/HCd83sC/99EbhYHNyEHAhXEEyKYAZ22ukYxXdTZZSlkOehOMwRG9RHZ2lbBj76srONpllHk7pnt7JdmIjpJ5JmNHe+KMvtGAg"
+}
+}
+
+
+
+////////////////////////////////////////
+
+
+{
+  "payload": {
+    "license_id": "183b5578-e521-432d-8d1c-8b3ee79b5bc1",
+    "issuer": "Technology Solutions",
+    "signature_algorithm": "RSA-SHA256",
+    "version": 1,
+    "company": "TS",
+    "type": "floating",
+    "max_activations": 5,
+    "machine_lock": "",
+    "features": {
+      "additionalProp1": {
+        "Version": "2026.1",
+        "tool": "ia-agent",
+        "funcionality": "HU,EXEC,QAAGENT"
+      }
+    },
+    "issued_at": "2026-03-04T15:56:08Z",
+    "expires_at": "2026-03-05T15:56:08Z",
+    "status": "active"
+  },
+  "signature": "aJTLWf3DCvxYxYeklu/tsRjcgjOWGlc465/Bc0Tbu0UiumlKeh1IwmafdW6GV3so55SbDLTcdynjXXczz5yR3/MrMkD2uJ4aLNBqkR7coeD0MoMXEks0UrJYPw59j1y8fKkxNzlmyOgMp11tzD8XBpcUIyLagShvhLOZ1za3ah80Kge16BB5wccFVkVdn6pOXMThOtk4JX5UT5Iiis5Kouat1OVHbJa7qvAfGCOD/cQkwsjXnoV0EaEW1gZVf0fy60R9+FCGdhNYOM6UBlBFbC8upwVfpsxP+em/ia5OPFqRSyTgFlEN8NOYIDHSxBMcvwtCQyyj4TgwlBi4yIjjDQ==",
+  "license_install_string": "TS-1772639768_183b5578-e521-432d-8d1c-8b3ee79b5bc1_floating_1772726168_5_aJTLWf3DCvxYxYeklu/tsRjcgjOWGlc465/Bc0Tbu0UiumlKeh1IwmafdW6GV3so55SbDLTcdynjXXczz5yR3/MrMkD2uJ4aLNBqkR7coeD0MoMXEks0UrJYPw59j1y8fKkxNzlmyOgMp11tzD8XBpcUIyLagShvhLOZ1za3ah80Kge16BB5wccFVkVdn6pOXMThOtk4JX5UT5Iiis5Kouat1OVHbJa7qvAfGCOD/cQkwsjXnoV0EaEW1gZVf0fy60R9+FCGdhNYOM6UBlBFbC8upwVfpsxP+em/ia5OPFqRSyTgFlEN8NOYIDHSxBMcvwtCQyyj4TgwlBi4yIjjDQ"
+}
+
+
+{
+  "payload": {
+    "license_id": "ce56fe19-a924-48b8-b9c8-766a74b1e783",
+    "issuer": "Technology Solutions",
+    "signature_algorithm": "RSA-SHA256",
+    "version": 1,
+    "company": "Bardiles-Sa",
+    "type": "floating",
+    "max_activations": 5,
+    "machine_lock": "",
+    "features": {
+      "additionalProp1": {
+        "Version": "2026.1",
+        "tool": "ia-agent",
+        "funcionality": "HU,EXEC,QAAGENT"
+      }
+    },
+    "issued_at": "2026-03-04T16:03:37Z",
+    "expires_at": "2026-03-05T16:03:37Z",
+    "status": "active"
+  },
+  "signature": "RvH45GD4hR0o+46vIxODWqSezXocIp/6WjMuEo4wa/8EjAdkEZLVv/sAPGOtaTVCXrgWgReNr2An9H5V8p7EsmxKydRCQAiirgoJhFmdvPhkBdzCxWzGI7oTAmv4O/dWaetA0GYsA1vSRjBmf5bJ7SvkjzMroPt+bWrYFKpp9zn0T+T6oMGEK1cPh3+7a+hQCGRCepHhhry68Y1eogHMdy5liGGCyOs1W0ozfGfG5tVUzejYqPkBZE3Dw1KVTFeFUMyFCtAINUs8iaoQxb5/Nbcma9e+t9vHT7URqkRheUqLwLx3mwvo14Z9zGDGOxBQek0z28QuiJqP6B8Ne8QWag==",
+  "license_install_string": "Bardiles-Sa-1772640217_ce56fe19-a924-48b8-b9c8-766a74b1e783_floating_1772726617_5_RvH45GD4hR0o+46vIxODWqSezXocIp/6WjMuEo4wa/8EjAdkEZLVv/sAPGOtaTVCXrgWgReNr2An9H5V8p7EsmxKydRCQAiirgoJhFmdvPhkBdzCxWzGI7oTAmv4O/dWaetA0GYsA1vSRjBmf5bJ7SvkjzMroPt+bWrYFKpp9zn0T+T6oMGEK1cPh3+7a+hQCGRCepHhhry68Y1eogHMdy5liGGCyOs1W0ozfGfG5tVUzejYqPkBZE3Dw1KVTFeFUMyFCtAINUs8iaoQxb5/Nbcma9e+t9vHT7URqkRheUqLwLx3mwvo14Z9zGDGOxBQek0z28QuiJqP6B8Ne8QWag"
+}
