@@ -4,10 +4,11 @@ from ..auth.dependencies import require_admin, get_current_user
 from ..models.user import User
 from ..database import get_db
 from sqlalchemy.orm import Session
-from ..models.license import InstalledLicense
+from ..models.license import InstalledLicense, ActiveSession
 from datetime import datetime
 from ..security.security import verify_license_signature, decode_payload
 from ..security.validation import sanitize_license_install_string
+from ..services.session_service import cleanup_sessions
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -43,6 +44,26 @@ def delete_license(
     db.delete(license_obj)
     db.commit()
     return RedirectResponse(url="/dashboard", status_code=302)  
+
+
+@router.post("/delete-sessions")
+def delete_all_sessions(
+    request: Request,
+    csrf_token: str = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_admin),
+):
+    """Elimina todas las sesiones activas. Solo admin + CSRF válido."""
+    cookie_token = request.cookies.get("csrf_token")
+    if not cookie_token or cookie_token != csrf_token:
+        raise HTTPException(status_code=403, detail="CSRF validation failed")
+
+    # Limpieza defensiva: primero borrar sesiones expiradas
+    cleanup_sessions(db)
+
+    db.query(ActiveSession).delete()
+    db.commit()
+    return RedirectResponse(url="/dashboard", status_code=302)
 
 
 @router.post("/install-license")

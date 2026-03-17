@@ -12,7 +12,12 @@ from ..auth.dependencies import require_admin
 from ..security.security import verify_license_signature, decode_payload
 from ..security.validation import sanitize_license_install_string
 from ..services.license_service import get_license, validate_license_state
-from ..services.session_service import cleanup_sessions, create_session
+from ..services.session_service import (
+    cleanup_sessions,
+    create_session,
+    find_active_session,
+    update_session_expiry,
+)
 
 router = APIRouter(prefix="/api/license", tags=["License API"])
 
@@ -145,8 +150,8 @@ def _license_info_response(license_obj):
 def activate_license(data: LicenseActivate, db: Session = Depends(get_db)):
     """
     Activa una licencia para una máquina. El cliente envía license_key y machine_id (fingerprint de la máquina).
-    Devuelve session_id y los datos de la licencia (company, expires_at, features) para que la app consumidora
-    no necesite una segunda llamada.
+    Si la misma máquina ya tiene una sesión activa para esa licencia, se actualiza (refresh) en lugar de crear otra.
+    Devuelve session_id y los datos de la licencia (company, expires_at, features).
     """
     cleanup_sessions(db)
     license_obj = get_license(db, data.license_key)
@@ -156,12 +161,21 @@ def activate_license(data: LicenseActivate, db: Session = Depends(get_db)):
     if license_obj.license_type == "machine":
         if license_obj.machine_lock != data.machine_id:
             raise HTTPException(status_code=400, detail="Machine mismatch: esta licencia está vinculada a otra máquina (machine_lock)")
-    elif license_obj.license_type == "floating":
-        active = db.query(ActiveSession).filter(ActiveSession.license_key == data.license_key).count()
-        if active >= license_obj.max_activations:
-            raise HTTPException(status_code=400, detail="No licenses available (max_activations reached)")
-    session_id = create_session(db, data.license_key, data.machine_id)
-    out = {"status": "activated", "session_id": session_id}
+
+    existing = find_active_session(db, data.license_key, data.machine_id)
+    if existing:
+        session_id = update_session_expiry(db, existing)
+        session_expires_at = existing.expires_at.isoformat() if existing.expires_at else None
+        out = {"status": "activated", "session_id": session_id, "session_updated": True, "session_expires_at": session_expires_at}
+    else:
+        if license_obj.license_type == "floating":
+            active = db.query(ActiveSession).filter(ActiveSession.license_key == data.license_key).count()
+            if active >= license_obj.max_activations:
+                raise HTTPException(status_code=400, detail="No licenses available (max_activations reached)")
+        session_id = create_session(db, data.license_key, data.machine_id)
+        session = db.query(ActiveSession).filter(ActiveSession.session_id == session_id).first()
+        session_expires_at = session.expires_at.isoformat() if session and session.expires_at else None
+        out = {"status": "activated", "session_id": session_id, "session_updated": False, "session_expires_at": session_expires_at}
     out.update(_license_info_response(license_obj))
     return out
 
@@ -178,11 +192,18 @@ def license_status(
     Opción 1: enviar session_id (obtenido al activar) en query.
     Opción 2: enviar license_key y machine_id (misma validación que activate, pero sin crear sesión).
     """
+    # Limpia sesiones expiradas antes de validar el estado
+    cleanup_sessions(db)
     if session_id:
         session = db.query(ActiveSession).filter(ActiveSession.session_id == session_id).first()
         if not session:
             raise HTTPException(status_code=404, detail="Session not found or expired")
         license_obj = get_license(db, session.license_key)
+        # Incluir cuándo expira la sesión para que el cliente sepa cuándo se libera la licencia
+        session_expires_at = session.expires_at.isoformat() if session.expires_at else None
+        result = _license_info_response(license_obj)
+        result["session_expires_at"] = session_expires_at
+        return result
     elif license_key and machine_id:
         license_obj = get_license(db, license_key)
         valid, error = validate_license_state(license_obj)

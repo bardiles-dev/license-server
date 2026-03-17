@@ -1,11 +1,24 @@
 import json
 import base64
 import hashlib
+import os
 import uuid
 import platform
 
+# Variable de entorno para fijar el fingerprint en Docker/Kubernetes (estable por despliegue/nodo).
+# Si está definida, se usa tal cual; si no, se calcula con hostname + MAC + sistema.
+ENV_MACHINE_ID = "LICENSE_MACHINE_ID"
 
-def get_fingerprint():
+
+def get_fingerprint() -> str:
+    """
+    Devuelve un identificador estable de la máquina para licencias.
+    - Si existe la variable de entorno LICENSE_MACHINE_ID, se usa su valor (recomendado en Docker/K8s).
+    - En caso contrario se usa hostname + MAC + sistema (puede cambiar por pod/restart en contenedores).
+    """
+    env_id = os.environ.get(ENV_MACHINE_ID)
+    if env_id and env_id.strip():
+        return env_id.strip()
     raw_data = f"{platform.node()}-{uuid.getnode()}-{platform.system()}"
     return hashlib.sha256(raw_data.encode()).hexdigest()
 

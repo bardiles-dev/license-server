@@ -108,7 +108,18 @@
 
 <section class="card card-theme overflow-hidden animate-in animate-in-delay-3">
     <div class="card-header bg-transparent border-bottom border-light px-3 px-md-4 py-3">
-        <h2 class="h6 fw-semibold text-dark mb-0">Sesiones activas</h2>
+        <div class="d-flex align-items-center justify-content-between gap-2">
+            <h2 class="h6 fw-semibold text-dark mb-0 mb-md-0">Sesiones activas</h2>
+            {% if user and user.role and user.role.name == "admin" and sessions %}
+            <form method="post" action="/admin/delete-sessions" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger"
+                        onclick="return confirm('¿Eliminar TODAS las sesiones activas?');">
+                    Eliminar todas
+                </button>
+            </form>
+            {% endif %}
+        </div>
     </div>
     <div class="table-responsive">
         <table class="table table-theme table-striped align-middle mb-0">
@@ -116,17 +127,31 @@
                 <tr>
                     <th>Máquina</th>
                     <th>Clave de licencia</th>
+                    <th>Expira sesión</th>
+                    <th>Tiempo restante</th>
                 </tr>
             </thead>
             <tbody>
-                {% for s in sessions %}
+                {% for s, remaining_seconds in sessions_with_remaining %}
                 <tr>
                     <td><code class="small">{{ s.machine_id }}</code></td>
                     <td><code class="small">{{ s.license_key }}</code></td>
+                    <td class="small text-muted">{{ s.expires_at.strftime('%d/%m/%Y %H:%M') if s.expires_at else '—' }}</td>
+                    <td class="small">
+                        {% if remaining_seconds >= 3600 %}
+                        {{ (remaining_seconds // 3600) }} h {{ ((remaining_seconds % 3600) // 60) }} min
+                        {% elif remaining_seconds >= 60 %}
+                        {{ (remaining_seconds // 60) }} min
+                        {% elif remaining_seconds > 0 %}
+                        &lt; 1 min
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="2" class="text-center text-muted py-4">No hay sesiones activas.</td>
+                    <td colspan="4" class="text-center text-muted py-4">No hay sesiones activas.</td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
@@ -8,7 +9,7 @@ from ..database import get_db
 from ..models.license import InstalledLicense, ActiveSession
 from ..models.user import User
 from ..auth.dependencies import get_current_user
-from ..services.session_service import generate_csrf
+from ..services.session_service import generate_csrf, cleanup_sessions
 from ..security.validation import allowlist_install_error
 
 router = APIRouter()
@@ -41,9 +42,20 @@ def dashboard(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    # Limpia sesiones expiradas antes de mostrarlas en el dashboard
+    cleanup_sessions(db)
     licenses = db.query(InstalledLicense).order_by(InstalledLicense.expires_at.desc()).all()
     licenses_with_features = [(lic, _parse_features_display(lic.features)) for lic in licenses]
     sessions = db.query(ActiveSession).all()
+    now = datetime.utcnow()
+    # Tiempo restante hasta expiración de cada sesión (segundos) para mostrar en el dashboard
+    sessions_with_remaining = []
+    for s in sessions:
+        remaining = 0
+        if s.expires_at:
+            delta = (s.expires_at - now).total_seconds()
+            remaining = max(0, int(delta))
+        sessions_with_remaining.append((s, remaining))
     csrf_token = generate_csrf()
     forbidden = request.query_params.get("forbidden") == "1"
     installed = request.query_params.get("installed") == "1"
@@ -56,6 +68,7 @@ def dashboard(
         "licenses": list(licenses),
         "licenses_with_features": licenses_with_features,
         "sessions": sessions,
+        "sessions_with_remaining": sessions_with_remaining,
         "csrf_token": csrf_token,
         "forbidden": forbidden,
         "installed": installed,

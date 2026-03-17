@@ -81,9 +81,6 @@ jobs:
   trivy-repo:
     name: Trivy (repository)
     runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -92,36 +89,8 @@ jobs:
         with:
           scan-type: "fs"
           scan-ref: "."
-          format: "sarif"
-          output: "trivy-repo.sarif"
-          severity: "CRITICAL,HIGH"
-        continue-on-error: true
-
-      - name: Trivy repo scan (HTML report)
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: "fs"
-          scan-ref: "."
           format: "table"
-          output: "trivy-repo.txt"
           severity: "CRITICAL,HIGH,MEDIUM"
-        continue-on-error: true
-
-      - name: Upload Trivy reports (artifact)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: trivy-repo-reports
-          path: |
-            trivy-repo.sarif
-            trivy-repo.txt
-        continue-on-error: true
-
-      - name: Upload Trivy SARIF (Security tab)
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: trivy-repo.sarif
         continue-on-error: true
 
   trivy-deps:
@@ -147,16 +116,7 @@ jobs:
           scan-type: "fs"
           scan-ref: "."
           format: "table"
-          output: "trivy-deps-${{ matrix.project }}.txt"
           severity: "CRITICAL,HIGH"
-        continue-on-error: true
-
-      - name: Upload Trivy deps report (artifact)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: trivy-deps-${{ matrix.project }}
-          path: trivy-deps-${{ matrix.project }}.txt
         continue-on-error: true
 
   # ------------------------------ Trivy container (imagen Docker license-server)
@@ -173,37 +133,8 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: "license-server:ci"
-          format: "sarif"
-          output: "trivy-container.sarif"
-          severity: "CRITICAL,HIGH"
-        continue-on-error: true
-
-      - name: Trivy image scan (table report)
-        run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "${{ github.workspace }}":/output \
-            aquasec/trivy:latest image \
-            --format table --severity CRITICAL,HIGH,MEDIUM \
-            -o /output/trivy-container.txt \
-            license-server:ci || true
-        continue-on-error: true
-
-      - name: Upload Trivy container reports (artifact)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: trivy-container-license-server
-          path: |
-            trivy-container.sarif
-            trivy-container.txt
-        continue-on-error: true
-
-      - name: Upload Trivy container SARIF (Security tab)
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: trivy-container.sarif
+          format: "table"
+          severity: "CRITICAL,HIGH,MEDIUM"
         continue-on-error: true
 
   # ------------------------------ Supply chain security
@@ -247,9 +178,6 @@ jobs:
   owasp-dependency-check:
     name: OWASP Dependency-Check
     runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -264,26 +192,71 @@ jobs:
             owasp/dependency-check:latest \
             --scan /src \
             --project "license-server-ts" \
-            --format SARIF \
+            --format JSON \
             --out /reports \
             --enablePython \
             --failOnCVSS 9
         continue-on-error: true
 
-      - name: Upload OWASP Dependency-Check (artifact)
-        uses: actions/upload-artifact@v4
+      - name: Dependency-Check summary (logs + Step Summary)
         if: always()
-        with:
-          name: owasp-dependency-check-reports
-          path: reports/
-        continue-on-error: true
+        run: |
+          echo "### OWASP Dependency-Check (resumen)" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f reports/dependency-check-report.json ]; then
+            cat <<'PY' | python
+            import json
+            from pathlib import Path
 
-      - name: Upload OWASP Dependency-Check SARIF (Security tab)
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
-        with:
-          sarif_file: reports/dependency-check-report.sarif
-        continue-on-error: true
+            p = Path("reports/dependency-check-report.json")
+            data = json.loads(p.read_text(encoding="utf-8"))
+
+            deps = data.get("dependencies") or []
+            vulns = []
+            for d in deps:
+                for v in (d.get("vulnerabilities") or []):
+                    vulns.append({
+                        "name": v.get("name") or v.get("source") or "-",
+                        "severity": v.get("severity") or "-",
+                        "cvss": (v.get("cvssv3", {}) or {}).get("baseScore") or (v.get("cvssv2", {}) or {}).get("score"),
+                        "fileName": d.get("fileName") or "-",
+                    })
+
+            sev_order = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}
+            vulns_sorted = sorted(
+                vulns,
+                key=lambda x: (sev_order.get(str(x["severity"]).upper(), 0), x["cvss"] or 0),
+                reverse=True,
+            )
+            top = vulns_sorted[:30]
+
+            counts = {}
+            for v in vulns:
+                k = str(v["severity"]).upper()
+                counts[k] = counts.get(k, 0) + 1
+
+            print("Dependency-Check vulns:", counts)
+
+            md = []
+            md.append("**Conteo**: " + ", ".join(
+                f"{k}={counts[k]}" for k in sorted(counts.keys(), key=lambda k: sev_order.get(k, 0), reverse=True)
+            ))
+            if top:
+                md.append("")
+                md.append("**Top vulnerabilidades (máx 30)**:")
+                for v in top:
+                    sev = str(v["severity"]).upper()
+                    score = v["cvss"]
+                    score_txt = f" (CVSS {score})" if score is not None else ""
+                    md.append(f"- `{sev}` {v['name']}{score_txt} — `{v['fileName']}`")
+
+            Path("depcheck-summary.md").write_text("\n".join(md) + "\n", encoding="utf-8")
+            PY
+            cat depcheck-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**No se generó** `reports/dependency-check-report.json` (revisa logs del step anterior)." >> "$GITHUB_STEP_SUMMARY"
+            echo "No se encontró reports/dependency-check-report.json"
+            ls -la reports || true
+          fi
 
   # SonarCloud (calidad de código + seguridad)
   # sonarcloud:
@@ -366,27 +339,84 @@ jobs:
         uses: zaproxy/action-baseline@v0.14.0
         with:
           target: "http://127.0.0.1:9000"
-          scan_type: "baseline"
+          # No crear issues ni artifacts (solo logs/summary)
+          allow_issue_writing: false
           fail_action: false
+          # Opciones extra del baseline (no fallar por warnings y dar salida útil)
+          cmd_options: "-a -I"
         continue-on-error: true
 
       - name: Create reports dir
         run: mkdir -p reports
 
-      - name: ZAP full scan (HTML report)
+      - name: ZAP full scan (HTML + JSON)
         run: |
           docker run --rm --network host \
             -v "${{ github.workspace }}/reports":/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
             -t http://127.0.0.1:9000 \
             -r /zap/wrk/zap-report.html \
+            -J /zap/wrk/zap-report.json \
             -I
         continue-on-error: true
 
-      - name: Upload DAST HTML report
-        uses: actions/upload-artifact@v4
+      - name: ZAP report summary (logs + Step Summary)
         if: always()
-        with:
-          name: dast-zap-report
-          path: reports/zap-report.html
-        continue-on-error: true
+        run: |
+          echo "### OWASP ZAP (resumen)" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f reports/zap-report.json ]; then
+            cat <<'PY' | python
+            import json
+            from pathlib import Path
+
+            p = Path("reports/zap-report.json")
+            data = json.loads(p.read_text(encoding="utf-8"))
+            site = (data.get("site") or [{}])[0]
+            alerts = site.get("alerts") or []
+
+            def sev_rank(risk):
+                return {"Informational": 0, "Low": 1, "Medium": 2, "High": 3}.get(risk, -1)
+
+            alerts_sorted = sorted(
+                alerts,
+                key=lambda a: sev_rank(a.get("riskdesc", "").split(" ")[0]),
+                reverse=True,
+            )
+            top = alerts_sorted[:20]
+
+            counts = {"High": 0, "Medium": 0, "Low": 0, "Informational": 0, "Other": 0}
+            for a in alerts:
+                key = (a.get("riskdesc") or "").split(" ")[0]
+                if key in counts:
+                    counts[key] += 1
+                else:
+                    counts["Other"] += 1
+
+            print("ZAP alerts:", counts)
+            print("\nTop alerts:")
+            for a in top:
+                risk = (a.get("riskdesc") or "").split(" ")[0]
+                name = a.get("name") or "-"
+                url = (a.get("instances") or [{}])[0].get("uri") if a.get("instances") else None
+                print(f"- [{risk}] {name}" + (f" ({url})" if url else ""))
+
+            md_lines = []
+            md_lines.append("**Conteo**: " + ", ".join(f"{k}={v}" for k, v in counts.items() if v))
+            if top:
+                md_lines.append("")
+                md_lines.append("**Top alertas (máx 20)**:")
+                for a in top:
+                    risk = (a.get("riskdesc") or "").split(" ")[0]
+                    name = a.get("name") or "-"
+                    url = (a.get("instances") or [{}])[0].get("uri") if a.get("instances") else ""
+                    md_lines.append(f"- `{risk}` {name}" + (f" — `{url}`" if url else ""))
+
+            Path("zap-summary.md").write_text("\n".join(md_lines) + "\n", encoding="utf-8")
+            PY
+            cat zap-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**No se generó** `reports/zap-report.json` (revisa logs del step anterior)." >> "$GITHUB_STEP_SUMMARY"
+            echo "No se encontró reports/zap-report.json"
+            ls -la reports || true
+          fi
+
