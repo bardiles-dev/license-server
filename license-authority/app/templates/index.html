@@ -29,20 +29,36 @@
                 <label class="form-label">Máx. activaciones</label>
                 <input type="number" class="form-control" name="max_activations" value="5" min="1" id="maxActivations">
             </div>
-            <div class="col-md-8 d-none" id="wrapMachineLock">
+            <div class="col-md-4 d-none" id="wrapMachineLock">
                 <label class="form-label">Machine lock (fingerprint)</label>
                 <input type="text" class="form-control" name="machine_lock" id="machineLock" placeholder="hash o fingerprint de la máquina">
             </div>
-            <div class="col-12">
-                <label class="form-label">Features (opcional)</label>
-                <div id="featuresList">
-                    <div class="input-group mb-2">
-                        <input type="text" class="form-control" placeholder="id (ej. ia-agent)" name="f_id_0">
-                        <input type="text" class="form-control" placeholder="version" name="f_version_0">
-                        <input type="text" class="form-control" placeholder="funcionality" name="f_funcionality_0">
-                    </div>
+            <div class="col-md-4">
+                <label class="form-label">ID de producto</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    name="feature_product_id"
+                    value="ia-agent"
+                    required
+                    placeholder="ej. ia-agent"
+                >
+                <div class="form-text">Representa el nombre/código del producto.</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label d-block">Funcionalidades</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="Automation" id="featureAutomation" name="feature_funcionality">
+                    <label class="form-check-label" for="featureAutomation">Automation</label>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="addFeature">+ Añadir feature</button>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="IAgent" id="featureIagent" name="feature_funcionality" checked>
+                    <label class="form-check-label" for="featureIagent">IAGENT</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="Execution" id="featureExecution" name="feature_funcionality">
+                    <label class="form-check-label" for="featureExecution">Execution</label>
+                </div>
             </div>
             <div class="col-12">
                 <button type="submit" class="btn btn-primary" id="btnCreate">Crear licencia</button>

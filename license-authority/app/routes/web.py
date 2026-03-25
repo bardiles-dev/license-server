@@ -21,8 +21,14 @@ def index(
     user: User = Depends(get_current_user),
 ):
     licenses = db.query(LicenseRecord).order_by(LicenseRecord.created_at.desc()).all()
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "user": user,
-        "licenses": licenses,
-    })
+
+    
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "request": request,
+            "user": user,
+            "licenses": licenses,
+        }
+    )

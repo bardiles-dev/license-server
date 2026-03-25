@@ -31,7 +31,7 @@ JSON_DUMPS_KW = {"sort_keys": True, "separators": (",", ":")}
 DEFAULT_FEATURES = {
     "ia-agent": {
         "version": "2026.1",
-        "funcionality": "HU,EXEC,QA-AGENT",
+        "funcionality": "IAGENT",
     },
 }
 

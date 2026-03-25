@@ -28,7 +28,12 @@ def login_form(request: Request):
     token = request.cookies.get("access_token")
     if token and decode_token(token):
         return RedirectResponse(url="/", status_code=302)
-    response = templates.TemplateResponse("login.html", {"request": request})
+    #response = templates.TemplateResponse("login.html", {"request": request})
+    response = templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={"request": request}
+    )
     if token:
         response.delete_cookie("access_token")
     return response

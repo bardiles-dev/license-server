@@ -21,39 +21,36 @@
     licenseType.addEventListener("change", toggleMachineFields);
     toggleMachineFields();
 
-    var featureCount = 1;
-    document.getElementById("addFeature").addEventListener("click", function() {
-        var div = document.createElement("div");
-        div.className = "input-group mb-2";
-        div.innerHTML = "<input type=\"text\" class=\"form-control\" placeholder=\"id\" name=\"f_id_" + featureCount + "\">" +
-            "<input type=\"text\" class=\"form-control\" placeholder=\"version\" name=\"f_version_" + featureCount + "\">" +
-            "<input type=\"text\" class=\"form-control\" placeholder=\"funcionality\" name=\"f_funcionality_" + featureCount + "\">";
-        document.getElementById("featuresList").appendChild(div);
-        featureCount++;
-    });
-
     form.addEventListener("submit", async function(e) {
         e.preventDefault();
         var btn = document.getElementById("btnCreate");
         btn.disabled = true;
         var fd = new FormData(form);
-        var features = [];
-        for (var i = 0; i < featureCount; i++) {
-            var id = fd.get("f_id_" + i);
-            if (id && id.toString().trim()) {
-                features.push({
-                    id: id.toString().trim(),
-                    version: (fd.get("f_version_" + i) || "").toString().trim() || null,
-                    funcionality: (fd.get("f_funcionality_" + i) || "").toString().trim() || null
-                });
-            }
+        var productId = (fd.get("feature_product_id") || "").toString().trim();
+        var selectedCapabilities = fd.getAll("feature_funcionality")
+            .map(function(v) { return v.toString().trim(); })
+            .filter(Boolean);
+        if (!productId) {
+            alert("Debes indicar el ID de producto.");
+            btn.disabled = false;
+            return;
         }
+        if (!selectedCapabilities.length) {
+            alert("Debes seleccionar al menos una funcionalidad.");
+            btn.disabled = false;
+            return;
+        }
+        var features = [{
+            id: productId,
+            version: "2026.1",
+            funcionality: selectedCapabilities.join(",")
+        }];
         var body = {
             company: fd.get("company").toString().trim(),
             license_type: fd.get("license_type"),
             max_activations: parseInt(fd.get("max_activations") || "1", 10),
             duration_days: parseInt(fd.get("duration_days") || "365", 10),
-            features: features.length ? features : null
+            features: features
         };
         if (licenseType.value === "machine") {
             body.machine_lock = fd.get("machine_lock").toString().trim();

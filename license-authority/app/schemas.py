@@ -49,7 +49,7 @@ class LicenseCreate(BaseModel):
                     "max_activations": 1,
                     "machine_lock": "a1b2c3d4e5f6-sha256-fingerprint-de-la-maquina",
                     "duration_days": 365,
-                    "features": [{"id": "ia-agent", "version": "2026.1", "funcionality": "HU,EXEC,QA-AGENT"}],
+                    "features": [{"id": "ia-agent", "version": "2026.1", "funcionality": "AUTOMATION,IAGENT,EXECUTION"}],
                 },
                 {
                     "company": "MiEmpresa",
@@ -57,7 +57,7 @@ class LicenseCreate(BaseModel):
                     "max_activations": 5,
                     "duration_days": 365,
                     "features": [
-                        {"id": "ia-agent", "version": "2026.1", "funcionality": "HU,EXEC,QA-AGENT"},
+                        {"id": "ia-agent", "version": "2026.1", "funcionality": "AUTOMATION,IAGENT,EXECUTION"},
                         {"id": "audit", "version": "2025.1"},
                     ],
                 },
