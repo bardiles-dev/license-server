@@ -62,18 +62,22 @@ def dashboard(
     # Solo valores permitidos para evitar XSS reflejado vía ?error=
     install_error = allowlist_install_error(request.query_params.get("error"))
 
-    response = templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "user": user,
-        "licenses": list(licenses),
-        "licenses_with_features": licenses_with_features,
-        "sessions": sessions,
-        "sessions_with_remaining": sessions_with_remaining,
-        "csrf_token": csrf_token,
-        "forbidden": forbidden,
-        "installed": installed,
-        "install_error": install_error,
-    })
+    response = templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+            "request": request,
+            "user": user,
+            "licenses": list(licenses),
+            "licenses_with_features": licenses_with_features,
+            "sessions": sessions,
+            "sessions_with_remaining": sessions_with_remaining,
+            "csrf_token": csrf_token,
+            "forbidden": forbidden,
+            "installed": installed,
+            "install_error": install_error,
+        }
+    )
     
     response.set_cookie(
         key="csrf_token",

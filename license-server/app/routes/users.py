@@ -151,15 +151,17 @@ def edit_user_form(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     _, roles = _get_users_and_roles(db)
     csrf_token = generate_csrf()
+
     response = templates.TemplateResponse(
-        "edit_user.html",
-        {
+        request=request,
+        name="edit_user.html",
+        context={
             "request": request,
             "user": current_user,
             "edit_user": edit_user,
             "roles": roles,
             "csrf_token": csrf_token,
-        },
+        }
     )
     response.set_cookie(key="csrf_token", value=csrf_token, httponly=True, samesite="lax")
     return response
