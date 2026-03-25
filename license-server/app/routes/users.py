@@ -31,14 +31,15 @@ def users_list(
     users, roles = _get_users_and_roles(db)
     csrf_token = generate_csrf()
     response = templates.TemplateResponse(
-        "configUsers.html",
-        {
+        request=request,
+        name="configUsers.html",
+        context={
             "request": request,
             "user": user,
             "users": users,
             "roles": roles,
             "csrf_token": csrf_token,
-        },
+        }
     )
     response.set_cookie(key="csrf_token", value=csrf_token, httponly=True, samesite="lax")
     return response
@@ -52,14 +53,16 @@ def create_user_form(
 ):
     _, roles = _get_users_and_roles(db)
     csrf_token = generate_csrf()
+
     response = templates.TemplateResponse(
-        "create_user.html",
-        {
+        request=request,
+        name="create_user.html",
+        context={
             "request": request,
             "user": user,
             "roles": roles,
             "csrf_token": csrf_token,
-        },
+        }
     )
     response.set_cookie(key="csrf_token", value=csrf_token, httponly=True, samesite="lax")
     return response
