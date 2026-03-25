@@ -30,7 +30,7 @@ REDIRECT_ERROR_SIGNATURE = "/?error=signature"
 REDIRECT_INSTALLED = "/?installed=1"
 
 
-DEFAULT_FEATURES_MAP = {"ia-agent": {"version": "2026.1", "funcionality": "HU,EXEC,QA-AGENT"}}
+DEFAULT_FEATURES_MAP = {"ia-agent": {"version": "2026.1", "funcionality": "IAGENT"}}
 
 
 def _features_from_payload(payload: dict) -> str:
@@ -53,7 +53,7 @@ def _features_from_payload(payload: dict) -> str:
             normalized = {
                 tool_id: {
                     "version": prop.get("Version", prop.get("version", "")),
-                    "funcionality": prop.get("funcionality", "HU,EXEC,QA-AGENT"),
+                    "funcionality": prop.get("funcionality", "IAGENT"),
                 }
             }
             return json.dumps(normalized)
