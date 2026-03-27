@@ -85,3 +85,7 @@ Untitled
 # license-server: overrides locales de compose (opcional)
 docker-compose.override.yml
 docker-compose.override.yaml
+
+*
+
+.zip
