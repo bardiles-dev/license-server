@@ -33,9 +33,12 @@ ENV PATH=/home/appuser/.local/bin:$PATH
 COPY app/ ./app/
 COPY requirements.txt .
 
-# public.pem: montar en runtime vía compose (volumen o bind) en /app/config/public.pem
 RUN mkdir -p /app/data /app/config \
     && chown -R appuser:appgroup /app
+COPY public.pem /app/config/public.pem
+RUN chown appuser:appgroup /app/config/public.pem
+
+ENV PUBLIC_PEM_PATH=/app/config/public.pem
 
 USER appuser
 

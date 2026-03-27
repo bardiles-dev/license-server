@@ -6,19 +6,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    #image: license-server-ts:1.0
+    image: license-server-ts:1.0
     container_name: license-server
     restart: unless-stopped
     ports:
       - "9900:9000"
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=sqlite:////app/data/license_server.db
       - PUBLIC_PEM_PATH=/app/config/public.pem
-      #- SECRET_KEY=${SECRET_KEY:-change-me-in-production}
-      - LICENSE_SERVER_MACHINE_ID=${LICENSE_SERVER_MACHINE_ID:-}
     volumes:
-      - ./license-server-data:/app/data
-      - ./public.pem:/app/config/public.pem:ro
+      - license-server-data:/app/data
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/', timeout=5)\" || exit 1"]
       interval: 30s
