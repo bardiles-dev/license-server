@@ -17,7 +17,7 @@ services:
       #- SECRET_KEY=${SECRET_KEY:-change-me-in-production}
       - LICENSE_SERVER_MACHINE_ID=${LICENSE_SERVER_MACHINE_ID:-}
     volumes:
-      - .license-server-data-dockercompose:/app/data
+      - ./license-server-data:/app/data
       - ./public.pem:/app/config/public.pem:ro
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/', timeout=5)\" || exit 1"]
