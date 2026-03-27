@@ -10,7 +10,6 @@
     function toggleMachineFields() {
         const isMachine = licenseType.value === "machine";
         wrapMachineLock.classList.toggle("d-none", !isMachine);
-        wrapMachineLock.querySelector("#machineLock").required = isMachine;
         if (isMachine) {
             maxActivations.value = "1";
             wrapMaxActivations.classList.add("d-none");
@@ -20,6 +19,24 @@
     }
     licenseType.addEventListener("change", toggleMachineFields);
     toggleMachineFields();
+
+    function formatApiError(data, status) {
+        if (!data) return "Error " + status;
+        var detail = data.detail;
+        if (Array.isArray(detail) && detail.length) {
+            var first = detail[0];
+            if (first && typeof first === "object") {
+                var path = Array.isArray(first.loc) ? first.loc.join(".") : "";
+                var msg = first.msg || JSON.stringify(first);
+                return path ? (path + ": " + msg) : msg;
+            }
+            return detail.join(", ");
+        }
+        if (detail && typeof detail === "object") return JSON.stringify(detail);
+        if (typeof detail === "string" && detail.trim()) return detail;
+        if (typeof data.message === "string" && data.message.trim()) return data.message;
+        return JSON.stringify(data);
+    }
 
     form.addEventListener("submit", async function(e) {
         e.preventDefault();
@@ -40,6 +57,18 @@
             btn.disabled = false;
             return;
         }
+        var machineLock = (fd.get("machine_lock") || "").toString().trim();
+        var machineId = (fd.get("machine_id") || "").toString().trim();
+        if (!machineId) {
+            alert("Debes indicar Machine ID.");
+            btn.disabled = false;
+            return;
+        }
+        if (licenseType.value === "machine" && !machineLock && !machineId) {
+            alert("Para licencias machine debes indicar Machine lock o Machine ID.");
+            btn.disabled = false;
+            return;
+        }
         var features = [{
             id: productId,
             version: "2026.1",
@@ -53,10 +82,11 @@
             features: features
         };
         if (licenseType.value === "machine") {
-            body.machine_lock = fd.get("machine_lock").toString().trim();
+            body.machine_lock = machineLock || null;
         } else {
             body.machine_lock = null;
         }
+        body.machine_id = machineId || null;
         try {
             var r = await fetch("/create", {
                 method: "POST",
@@ -65,8 +95,10 @@
                 body: JSON.stringify(body)
             });
             if (r.status === 401) { window.location.href = "/login"; return; }
-            var data = await r.json();
-            if (!r.ok) throw new Error(data.detail || JSON.stringify(data));
+            var data = {};
+            var isJson = (r.headers.get("content-type") || "").indexOf("application/json") !== -1;
+            if (isJson) data = await r.json();
+            if (!r.ok) throw new Error(formatApiError(data, r.status));
             document.getElementById("resultInstallString").value = fd.get("company").toString()+ "_" + data.license_install_string || "";
             document.getElementById("resultPayload").textContent = JSON.stringify({ payload: data.payload, signature: data.signature }, null, 2);
             new bootstrap.Modal(document.getElementById("resultModal")).show();

@@ -11,6 +11,7 @@ from ..models.user import User
 from ..auth.dependencies import get_current_user
 from ..services.session_service import generate_csrf, cleanup_sessions
 from ..security.validation import allowlist_install_error
+from ..config import get_server_machine_id_info
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -61,6 +62,7 @@ def dashboard(
     installed = request.query_params.get("installed") == "1"
     # Solo valores permitidos para evitar XSS reflejado vía ?error=
     install_error = allowlist_install_error(request.query_params.get("error"))
+    server_machine_id, server_machine_id_source = get_server_machine_id_info()
 
     response = templates.TemplateResponse(
         request=request,
@@ -76,6 +78,8 @@ def dashboard(
             "forbidden": forbidden,
             "installed": installed,
             "install_error": install_error,
+            "server_machine_id": server_machine_id,
+            "server_machine_id_source": server_machine_id_source,
         }
     )
     

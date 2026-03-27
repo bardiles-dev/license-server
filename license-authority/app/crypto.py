@@ -13,6 +13,7 @@ def load_private_key():
 
 
 def sign_license(payload: dict) -> str:
+    """Firma el payload completo (incluye campos nuevos como machine_id)."""
     private_key = load_private_key()
 
     payload_bytes = json.dumps(

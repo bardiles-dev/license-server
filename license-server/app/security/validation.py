@@ -20,7 +20,7 @@ USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
 EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
 # Valores permitidos para query param ?error= (evitar XSS reflejado)
-ALLOWED_INSTALL_ERRORS = frozenset({"csrf", "empty", "decode", "signature"})
+ALLOWED_INSTALL_ERRORS = frozenset({"csrf", "empty", "decode", "signature", "machine_mismatch"})
 
 
 def allowlist_install_error(value: Optional[str]) -> Optional[str]:

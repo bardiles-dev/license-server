@@ -1,6 +1,6 @@
 services:
   license-authority:
-    image: license-authority:1.0.0
+    #image: license-authority:1.0.0
     build:
       context: .
       dockerfile: Dockerfile

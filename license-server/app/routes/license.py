@@ -12,6 +12,7 @@ from ..auth.dependencies import require_admin
 from ..security.security import verify_license_signature, decode_payload
 from ..security.validation import sanitize_license_install_string
 from ..services.license_service import get_license, validate_license_state
+from ..config import get_server_machine_id
 from ..services.session_service import (
     cleanup_sessions,
     create_session,
@@ -27,6 +28,7 @@ REDIRECT_ERROR_CSRF = "/?error=csrf"
 REDIRECT_ERROR_EMPTY = "/?error=empty"
 REDIRECT_ERROR_DECODE = "/?error=decode"
 REDIRECT_ERROR_SIGNATURE = "/?error=signature"
+REDIRECT_ERROR_MACHINE_MISMATCH = "/?error=machine_mismatch"
 REDIRECT_INSTALLED = "/?installed=1"
 
 
@@ -84,6 +86,15 @@ def _install_license_from_payload(db: Session, payload: dict) -> None:
     db.commit()
 
 
+def _payload_machine_binding(payload: dict) -> str | None:
+    """Obtiene machine_id/machine_lock esperado desde el payload firmado."""
+    machine_id = (payload.get("machine_id") or "").strip()
+    if machine_id:
+        return machine_id
+    machine_lock = (payload.get("machine_lock") or "").strip()
+    return machine_lock or None
+
+
 @router.post("/install")
 def install_license(data: LicenseInstall, db: Session = Depends(get_db)):
     payload = verify_license_signature(data.license_blob)
@@ -120,6 +131,13 @@ def install_license_from_string(
         payload = verify_license_signature(license_blob)
         if not payload:
             return RedirectResponse(url=REDIRECT_ERROR_SIGNATURE, status_code=302)
+        expected_machine_id = _payload_machine_binding(payload)
+        if not expected_machine_id:
+            # Exigir binding explícito para cualquier licencia instalada por string.
+            return RedirectResponse(url=REDIRECT_ERROR_MACHINE_MISMATCH, status_code=302)
+        server_machine_id = get_server_machine_id()
+        if expected_machine_id != server_machine_id:
+            return RedirectResponse(url=REDIRECT_ERROR_MACHINE_MISMATCH, status_code=302)
         _install_license_from_payload(db, payload)
         return RedirectResponse(url=REDIRECT_INSTALLED, status_code=302)
     except (ValueError, KeyError, TypeError):

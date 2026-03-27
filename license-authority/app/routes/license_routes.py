@@ -69,6 +69,7 @@ def save_license(
         license_type=payload["type"],
         max_activations=payload["max_activations"],
         machine_lock=payload["machine_lock"],
+        machine_id=payload.get("machine_id"),
         issued_at=datetime.fromisoformat(payload["issued_at"].replace("Z", "")),
         expires_at=datetime.fromisoformat(payload["expires_at"].replace("Z", "")),
         status=payload["status"],
@@ -94,6 +95,7 @@ def _features_to_dict(features_list) -> dict:
 
 def _build_payload(data: LicenseCreate, now: datetime, expires: datetime, license_id: str, version: int = 1, **overrides):
     features = _features_to_dict(data.features)
+    machine_lock = data.machine_lock or data.machine_id
     base = {
         "license_id": license_id,
         "issuer": ISSUER_NAME,
@@ -102,7 +104,8 @@ def _build_payload(data: LicenseCreate, now: datetime, expires: datetime, licens
         "company": data.company.replace(" ", "-"),
         "type": data.license_type.value,
         "max_activations": data.max_activations,
-        "machine_lock": data.machine_lock,
+        "machine_lock": machine_lock,
+        "machine_id": data.machine_id,
         "features": features,
         "issued_at": utc_iso(now),
         "expires_at": utc_iso(expires),
@@ -192,7 +195,8 @@ def renew_license(
         "company": existing.company,
         "type": existing.license_type,
         "max_activations": existing.max_activations,
-        "machine_lock": existing.machine_lock,
+        "machine_lock": existing.machine_lock or existing.machine_id,
+        "machine_id": existing.machine_id,
         "features": DEFAULT_FEATURES,
         "issued_at": utc_iso(now),
         "expires_at": utc_iso(expires),

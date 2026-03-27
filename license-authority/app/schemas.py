@@ -11,6 +11,7 @@ class LicenseType(str, Enum):
 # Límites para evitar XSS, inyección y payloads enormes
 COMPANY_MAX_LEN = 200
 MACHINE_LOCK_MAX_LEN = 256
+MACHINE_ID_MAX_LEN = 256
 FEATURE_ID_MAX_LEN = 64
 FEATURE_VERSION_MAX_LEN = 32
 FEATURE_FUNCIONALITY_MAX_LEN = 128
@@ -37,6 +38,12 @@ class LicenseCreate(BaseModel):
         "El cliente envía este mismo valor como machine_id al activar; license-server comprueba machine_id == machine_lock. "
         "Debe ser null o omitir si license_type=floating.",
     )
+    machine_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=MACHINE_ID_MAX_LEN,
+        description="Identificador único alternativo para la máquina (ej: asset id o hostname corporativo).",
+    )
     duration_days: int = Field(..., ge=1, le=DURATION_DAYS_MAX)
     features: Optional[List[FeatureItem]] = None
 
@@ -48,6 +55,7 @@ class LicenseCreate(BaseModel):
                     "license_type": "machine",
                     "max_activations": 1,
                     "machine_lock": "a1b2c3d4e5f6-sha256-fingerprint-de-la-maquina",
+                    "machine_id": "WIN-CLIENTE-001",
                     "duration_days": 365,
                     "features": [{"id": "ia-agent", "version": "2026.1", "funcionality": "AUTOMATION,IAGENT,EXECUTION"}],
                 },
@@ -68,8 +76,13 @@ class LicenseCreate(BaseModel):
     @model_validator(mode="after")
     def validate_logic(self):
 
-        if self.license_type == LicenseType.machine and not self.machine_lock:
-            raise ValueError("machine_lock is required for machine licenses")
+        if not self.machine_id or not self.machine_id.strip():
+            raise ValueError("machine_id is required")
+
+        self.machine_id = self.machine_id.strip()
+
+        if self.license_type == LicenseType.machine and not (self.machine_lock or self.machine_id):
+            raise ValueError("machine_lock or machine_id is required for machine licenses")
 
         if self.license_type == LicenseType.floating and self.machine_lock:
             raise ValueError("machine_lock must be null for floating licenses")

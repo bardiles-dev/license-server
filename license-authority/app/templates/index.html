@@ -33,6 +33,11 @@
                 <label class="form-label">Machine lock (fingerprint)</label>
                 <input type="text" class="form-control" name="machine_lock" id="machineLock" placeholder="hash o fingerprint de la máquina">
             </div>
+            <div class="col-md-4" id="wrapMachineId">
+                <label class="form-label">Machine ID (único)</label>
+                <input type="text" class="form-control" name="machine_id" id="machineId" placeholder="ej. WIN-CLIENTE-001" required>
+                <div class="form-text">Identificador único alternativo del dispositivo.</div>
+            </div>
             <div class="col-md-4">
                 <label class="form-label">ID de producto</label>
                 <input
@@ -154,5 +159,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/app.js"></script>
+<script src="/static/js/app.js?v=20260327-2"></script>
 {% endblock %}

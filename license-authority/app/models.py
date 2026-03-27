@@ -29,6 +29,7 @@ class LicenseRecord(Base):
     license_type = Column(String)
     max_activations = Column(Integer)
     machine_lock = Column(String, nullable=True)
+    machine_id = Column(String, nullable=True)
 
     issued_at = Column(DateTime)
     expires_at = Column(DateTime)

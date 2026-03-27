@@ -35,6 +35,11 @@
     <span>Firma de licencia inválida.</span>
     <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
 </div>
+{% elif install_error == 'machine_mismatch' %}
+<div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+    <span>La licencia no corresponde al machine_id de este servidor.</span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
 {% endif %}
 
 <header class="mb-4 animate-in">
@@ -42,8 +47,13 @@
     <p class="text-muted small mb-0">Resumen de licencias y sesiones activas</p>
 </header>
 
-{% if user and user.role and user.role.name == "admin" %}
 <section class="card card-theme p-3 p-md-4 mb-4 animate-in animate-in-delay-1">
+    <h2 class="h6 fw-semibold text-dark mb-2">Machine ID del servidor</h2>
+    <p class="mb-1"><code class="small">{{ server_machine_id }}</code></p>
+</section>
+
+{% if user and user.role and user.role.name == "admin" %}
+<section class="card card-theme p-3 p-md-4 mb-4 animate-in animate-in-delay-2">
     <h2 class="h6 fw-semibold text-dark mb-3">Instalar licencia</h2>
     <form method="post" action="/api/license/install-from-string" class="row g-2 align-items-end">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

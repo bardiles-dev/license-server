@@ -3,6 +3,8 @@ from pathlib import Path
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
+from sqlalchemy import inspect, text
 
 from .database import engine, get_db, SessionLocal
 from .models import Base, User
@@ -55,6 +57,20 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     return RedirectResponse(url="/login", status_code=302)
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # Devuelve un texto legible para UI web (evita mostrar [object Object]).
+    errors = exc.errors()
+    if errors:
+        first = errors[0]
+        loc = ".".join(str(x) for x in first.get("loc", []))
+        msg = first.get("msg", "Validation error")
+        detail = f"{loc}: {msg}" if loc else msg
+    else:
+        detail = "Validation error"
+    return JSONResponse(status_code=422, content={"detail": detail})
+
+
 # ---------------------------
 # Static y rutas
 # ---------------------------
@@ -65,9 +81,21 @@ app.include_router(web.router)
 app.include_router(license_routes.router)
 
 
+def ensure_schema_updates():
+    """Compatibilidad con DB SQLite existente sin migraciones formales."""
+    inspector = inspect(engine)
+    if not inspector.has_table("license_records"):
+        return
+    columns = {col["name"] for col in inspector.get_columns("license_records")}
+    if "machine_id" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE license_records ADD COLUMN machine_id VARCHAR"))
+
+
 @app.on_event("startup")
 def create_default_user():
     """Crea usuario admin/admin si no existe ningún usuario (como en license-server)."""
+    ensure_schema_updates()
     db = SessionLocal()
     try:
         if db.query(User).first() is None:

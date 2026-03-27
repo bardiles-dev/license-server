@@ -3,10 +3,10 @@
 
 services:
   license-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    #image: license-server-ts:1.0
+    #build:
+    #  context: .
+    #  dockerfile: Dockerfile
+    image: license-server-ts:1.0
     container_name: license-server
     restart: unless-stopped
     ports:
@@ -14,8 +14,7 @@ services:
     environment:
       - DATABASE_URL=sqlite:////app/data/license_server.db
       - PUBLIC_PEM_PATH=/app/config/public.pem
-      #- SECRET_KEY=${SECRET_KEY:-change-me-in-production}
-      - LICENSE_SERVER_MACHINE_ID=${LICENSE_SERVER_MACHINE_ID:-}
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
     volumes:
       - .license-server-data-dockercompose:/app/data
       - ./public.pem:/app/config/public.pem:ro
