@@ -86,6 +86,7 @@ Untitled
 docker-compose.override.yml
 docker-compose.override.yaml
 
-*
-
-.zip
+*.db    
+*.zip
+*.pyc
+*.tar

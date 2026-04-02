@@ -29,9 +29,9 @@ JSON_DUMPS_KW = {"sort_keys": True, "separators": (",", ":")}
 
 # Formato de features: clave = id de herramienta/módulo, valor = atributos (version, funcionality, etc.)
 DEFAULT_FEATURES = {
-    "ia-agent": {
+    "qa-agent": {
         "version": "2026.1",
-        "funcionality": "IAGENT",
+        "funcionality": "QAagent",
     },
 }
 

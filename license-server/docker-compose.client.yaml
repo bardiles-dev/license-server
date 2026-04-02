@@ -1,11 +1,5 @@
-# License Server - Compose estable y seguro
-# Uso: copiar .env.example a .env, definir SECRET_KEY y rutas; luego: docker compose up -d
-
 services:
   license-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: license-server-ts:1.0
     container_name: license-server
     restart: unless-stopped
@@ -18,9 +12,6 @@ services:
       - PUBLIC_PEM_PATH=/app/config/public.pem
     volumes:
       - license-server-data:/app/data
-    networks:
-      license-net:
-        ipv4_address: 172.20.0.10
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/', timeout=5)\" || exit 1"]
       interval: 30s
@@ -35,11 +26,3 @@ services:
 
 volumes:
   license-server-data:
-
-
-networks:
-  license-net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
